@@ -1,7 +1,4 @@
-from __future__ import \
-    annotations  # PEP 563: Postponed Evaluation of Annotations
-
-import random
+from __future__ import annotations  # PEP 563: Postponed Evaluation of Annotations
 
 from data_classes import Curve, Generator, Point, PublicKey
 
@@ -24,51 +21,11 @@ bitcoin_gen = Generator(
     n=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141,
 )
 
-# we can verify that the generator point is indeed on the curve, i.e. y^2 = x^3 + 7 (mod p)
-print("Generator IS on the curve: ", (G.y**2 - G.x**3 - 7) % bitcoin_curve.p == 0)
-
-# some other totally random point will of course not be on the curve, _MOST_ likely
-
-random.seed(1337)
-x = random.randrange(0, bitcoin_curve.p)
-y = random.randrange(0, bitcoin_curve.p)
-print("Totally random point is not: ", (y**2 - x**3 - 7) % bitcoin_curve.p == 0)
-
 secret_key = int.from_bytes(
     b"Andrej is cool :P", "big"
 )  # this is how I will do it for reproducibility
 assert 1 <= secret_key < bitcoin_gen.n
-print(secret_key)
-
-# if our secret key was the integer 1, then our public key would just be G:
-sk = 1
-pk = G
-print(f" secret key: {sk}\n public key: {(pk.x, pk.y)}")
-print(
-    "Verify the public key is on the curve: ",
-    (pk.y**2 - pk.x**3 - 7) % bitcoin_curve.p == 0,
-)
-# if it was 2, the public key is G + G:
-sk = 2
-pk = G + G
-print(f" secret key: {sk}\n public key: {(pk.x, pk.y)}")
-print(
-    "Verify the public key is on the curve: ",
-    (pk.y**2 - pk.x**3 - 7) % bitcoin_curve.p == 0,
-)
-# etc.:
-sk = 3
-pk = G + G + G
-print(f" secret key: {sk}\n public key: {(pk.x, pk.y)}")
-print(
-    "Verify the public key is on the curve: ",
-    (pk.y**2 - pk.x**3 - 7) % bitcoin_curve.p == 0,
-)
-
-# "verify" correctness
-print(G == 1 * G)
-print(G + G == 2 * G)
-print(G + G + G == 3 * G)
+print(f"Secret key: {secret_key}")
 
 # efficiently calculate our actual public key!
 public_key = secret_key * G

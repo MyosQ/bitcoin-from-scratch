@@ -27,6 +27,15 @@ class Point:
     x: int
     y: int
 
+    def is_on_curve(self) -> bool:
+        """
+        checks if the point is on the curve.
+        Assuming the curve is defined by: y^2 = x^3 + a*x + b (mod p),  secp256k1 uses a = 0, b = 7
+        """
+        return (
+            self.y**2 - self.x**3 - self.curve.a * self.x - self.curve.b
+        ) % self.curve.p == 0
+
     def __add__(self, other: Point) -> Point:
         """elliptic_curve_addition"""
 
@@ -83,6 +92,8 @@ class Point:
             k >>= 1
         return result
 
+    def __mul__(self, other: int) -> Point:
+        return self.__rmul__(other)
 
 @dataclass
 class Generator:
