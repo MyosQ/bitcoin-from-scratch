@@ -1,8 +1,6 @@
-from __future__ import \
-    annotations  # PEP 563: Postponed Evaluation of Annotations
+from __future__ import annotations
 
-from dataclasses import \
-    dataclass  # https://docs.python.org/3/library/dataclasses.html I like these a lot
+from dataclasses import dataclass
 
 from hash_utils import b58encode, ripemd160, sha256
 
@@ -27,7 +25,7 @@ class Point:
     x: int
     y: int
 
-    def is_on_curve(self) -> bool:
+    def is_valid(self) -> bool:
         """
         checks if the point is on the curve.
         Assuming the curve is defined by: y^2 = x^3 + a*x + b (mod p),  secp256k1 uses a = 0, b = 7
@@ -95,6 +93,7 @@ class Point:
     def __mul__(self, other: int) -> Point:
         return self.__rmul__(other)
 
+
 @dataclass
 class Generator:
     """
@@ -103,6 +102,23 @@ class Generator:
 
     G: Point  # a generator point on the curve
     n: int  # the order of the generating point, so 0*G = n*G = INF
+
+    def is_valid(self) -> bool:
+        """check if the generator point lies on the curve"""
+        return self.G.is_valid()
+
+
+@dataclass
+class PrivateKey:
+    """
+    An private key. Basically an integer.
+    """
+
+    secret: int
+
+    def get_public_key(self, generator_point: Point) -> PublicKey:
+        """returns the public key point corresponding to the private key"""
+        return PublicKey.from_point(self.secret * generator_point)
 
 
 class PublicKey(Point):
@@ -132,8 +148,9 @@ class PublicKey(Point):
         # hash if desired
         return ripemd160(sha256(pkb)) if hash160 else pkb
 
-    def address(self, net: str, compressed: bool) -> str:
+    def address(self, net: str, compressed: bool = True) -> str:
         """return the associated bitcoin address for this public key as string"""
+        assert net in ["main", "test"], "Network must be 'main' or 'test'"
         # encode the public key into bytes and hash to get the payload
         pkb_hash = self.encode(compressed=compressed, hash160=True)
         # add version byte (0x00 for Main Network, or 0x6f for Test Network)

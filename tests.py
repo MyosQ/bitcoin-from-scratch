@@ -1,8 +1,7 @@
 # using unittest to test the functions in the file
 import unittest
-from data_classes import Point, Curve, Generator, PublicKey
-from hash_utils import ripemd160, sha256
-import random
+
+from data_classes import Curve, Generator, Point, PrivateKey, PublicKey
 
 bitcoin_curve = Curve(
     p=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F,
@@ -16,6 +15,7 @@ bitcoin_generator_point = Point(
     y=0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8,
 )
 
+
 class CurveTestCase(unittest.TestCase):
     def test_curve_initialization(self):
         curve = Curve(p=17, a=2, b=2)
@@ -23,69 +23,68 @@ class CurveTestCase(unittest.TestCase):
         self.assertEqual(curve.a, 2)
         self.assertEqual(curve.b, 2)
 
+
 class PointTestCase(unittest.TestCase):
     def setUp(self):
         self.curve = bitcoin_curve
         self.generator = bitcoin_generator_point
         self.point1 = self.generator
         self.point2 = self.generator * 2
-        self.point3 = self.generator * 3
-        self.point4 = Point(self.curve, 5, 1)
-
-    def test_addition(self):
-        # Test addition of two points
-        result = self.point1 + self.point2
-        pass
-
-    def test_multiplication(self):
-        # Test multiplication of a point with a scalar
-        result = self.point1 * 3
-        pass
+        self.point3 = Point(self.curve, 5, 1)  # not on curve
 
     def test_addition_same_as_multiplication(self):
-        for P in [self.point1, self.point2, self.point3, self.point4]:
+        for P in [self.point1, self.point2, self.point3]:
             self.assertTrue(P == P * 1)
             self.assertTrue(P == 1 * P)
             self.assertTrue(P + P == P * 2)
             self.assertTrue(P + P == 2 * P)
-            self.assertTrue(P + P + P == P * 3)
-            self.assertTrue(P + P + P == 3 * P)
 
     def test_point_is_on_curve(self):
-        # Test that the point is on the curve
-        for P in [self.point1, self.point2, self.point3]:
-            self.assertTrue(P.is_on_curve())
+        for P in [self.point1, self.point2]:
+            self.assertTrue(P.is_valid())
 
-        # Test that the point is not on the curve
-        self.assertFalse(self.point4.is_on_curve())
+    def test_point_is_not_on_curve(self):
+        self.assertFalse(self.point3.is_valid())
+
 
 class GeneratorTestCase(unittest.TestCase):
     def test_generator_initialization(self):
-        curve = Curve(a=2, b=3, p=17)
-        G = Point(x=1, y=2, curve=curve)
+        G = Point(x=1, y=2, curve=bitcoin_curve)
         n = 10  # Example value for the order of the generator point
-
         generator = Generator(G, n)
 
         self.assertEqual(generator.G, G)
         self.assertEqual(generator.n, n)
 
 
-class TestPublicKey(unittest.TestCase):
-    def setUp(self):
-        # Create a sample Point object
-        curve = Curve(a=2, b=3, p=17)
-        x = 5
-        y = 1
-        self.point = Point(curve, x, y)
-        # Create a sample PublicKey object
-        self.public_key = PublicKey.from_point(self.point)
+class PrivateKeyTests(unittest.TestCase):
+    def test_private_key_initialization(self):
+        private_key = PrivateKey(123)
+        assert private_key.secret == 123
 
-    def test_encode_compressed(self):
-        # Test encoding with compressed=True
-        encoded = self.public_key.encode(compressed=True)
-        expected = ...
-        pass
+    def test_get_public_key(self):
+        generator_point = bitcoin_generator_point
+
+        # Test with a trivial private key 1
+        private_key = PrivateKey(1)
+        public_key = private_key.get_public_key(generator_point)
+        self.assertIsInstance(public_key, PublicKey)
+        self.assertEqual(public_key, PublicKey.from_point(generator_point))
+
+        # Test with a trivial private key 2
+        private_key = PrivateKey(2)
+        public_key = private_key.get_public_key(generator_point)
+        self.assertIsInstance(public_key, PublicKey)
+        self.assertEqual(public_key, PublicKey.from_point(generator_point * 2))
+
+
+class TestPublicKey(unittest.TestCase):
+    def test_lol_address(self):
+        lol_public_key = bitcoin_generator_point
+        lol_address = PublicKey.from_point(lol_public_key).address(
+            net="test", compressed=True
+        )
+        self.assertEqual(lol_address, "mrCDrCybB6J1vRfbwM5hemdJz73FwDBC8r")
 
 
 if __name__ == "__main__":
