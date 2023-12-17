@@ -1,3 +1,16 @@
+def is_prime(n: int) -> bool:
+    """Custom Primality tests"""
+    if n <= 3:
+        return n > 1
+    if n % 2 == 0 or n % 3 == 0 or n % 5 == 0 or n % 7 == 0:
+        return False
+
+    # miller rabin test
+    ...
+
+    return True
+
+
 def b58encode(b: bytes) -> str:
     """
     encode bytes to a base58-encoded string

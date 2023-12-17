@@ -18,10 +18,20 @@ bitcoin_generator_point = Point(
 
 class CurveTestCase(unittest.TestCase):
     def test_curve_initialization(self):
-        curve = Curve(p=17, a=2, b=2)
+        curve = Curve(p=17, a=1, b=1)
         self.assertEqual(curve.p, 17)
-        self.assertEqual(curve.a, 2)
-        self.assertEqual(curve.b, 2)
+        self.assertEqual(curve.a, 1)
+        self.assertEqual(curve.b, 1)
+
+    def test_init_with_invalid_parameters(self):
+        with self.assertRaisesRegex(AssertionError, "p must be > 3"):
+            Curve(p=2, a=1, b=1)
+
+        with self.assertRaisesRegex(AssertionError, "Curve must not be singular"):
+            Curve(p=17, a=-3, b=2)
+
+        with self.assertRaisesRegex(AssertionError, "p is not prime"):
+            Curve(p=18, a=1, b=1)
 
 
 class PointTestCase(unittest.TestCase):
@@ -30,26 +40,28 @@ class PointTestCase(unittest.TestCase):
         self.generator = bitcoin_generator_point
         self.point1 = self.generator
         self.point2 = self.generator * 2
-        self.point3 = Point(self.curve, 5, 1)  # not on curve
+
+    def test_addition(self):
+        curve = Curve(p=17, a=-7, b=10)
+        P = Point(curve, x=1, y=2)
+        Q = Point(curve, x=3, y=4)
+        assert P + Q == Point(curve, x=14, y=2)
 
     def test_addition_same_as_multiplication(self):
-        for P in [self.point1, self.point2, self.point3]:
+        for P in [self.point1, self.point2]:
             self.assertTrue(P == P * 1)
             self.assertTrue(P == 1 * P)
             self.assertTrue(P + P == P * 2)
             self.assertTrue(P + P == 2 * P)
 
-    def test_point_is_on_curve(self):
-        for P in [self.point1, self.point2]:
-            self.assertTrue(P.is_valid())
-
-    def test_point_is_not_on_curve(self):
-        self.assertFalse(self.point3.is_valid())
+    def test_init_with_invalid_parameters(self):
+        with self.assertRaisesRegex(AssertionError, "Point is not on the curve"):
+            Point(self.curve, 5, 1)
 
 
 class GeneratorTestCase(unittest.TestCase):
     def test_generator_initialization(self):
-        G = Point(x=1, y=2, curve=bitcoin_curve)
+        G = bitcoin_generator_point
         n = 10  # Example value for the order of the generator point
         generator = Generator(G, n)
 

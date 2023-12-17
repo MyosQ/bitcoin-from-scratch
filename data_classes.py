@@ -2,37 +2,54 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from hash_utils import b58encode, ripemd160, sha256
+from utils import b58encode, is_prime, ripemd160, sha256
 
 
-@dataclass
 class Curve:
     """
     Elliptic Curve over the field of integers modulo a prime.
-    Points on the curve satisfy y^2 = x^3 + a*x + b (mod p).
+    Points on the curve satisfy y^2 = x^3 + a*x + b (mod p), where 4*a^3 + 27*b^2 != 0 (mod p).
     """
 
-    p: int  # the prime modulus of the finite field
-    a: int
-    b: int
+    def __init__(self, p: int, a: int, b: int):
+        assert p > 3, "p must be > 3"
+        assert (4 * a**3 + 27 * b**2) % p != 0, "Curve must not be singular"
+        assert is_prime(p), "p is not prime"
+
+        self.p = p
+        self.a = a
+        self.b = b
+
+    def __repr__(self):
+        return f"Curve(p={self.p}, a={self.a}, b={self.b})"
 
 
-@dataclass
 class Point:
-    """An integer point (x,y) on a Curve"""
+    """An integer point (x,y) on an elliptic curve"""
 
-    curve: Curve
-    x: int
-    y: int
+    def __init__(self, curve: Curve, x: int, y: int):
+        if not (x is None and y is None):  # ideal point
+            assert (
+                y**2 % curve.p == (x**3 + curve.a * x + curve.b) % curve.p
+            ), "Point is not on the curve"
+        self.curve = curve
+        self.x = x
+        self.y = y
 
-    def is_valid(self) -> bool:
-        """
-        checks if the point is on the curve.
-        Assuming the curve is defined by: y^2 = x^3 + a*x + b (mod p),  secp256k1 uses a = 0, b = 7
-        """
-        return (
-            self.y**2 - self.x**3 - self.curve.a * self.x - self.curve.b
-        ) % self.curve.p == 0
+    @classmethod
+    def from_ideal_point(cls):
+        return cls(None, None, None)
+
+    def is_ideal_point(self) -> bool:
+        return self.x is None and self.y is None
+
+    def __repr__(self):
+        return f"Point({self.x}, {self.y}) - Curve: {self.curve}"
+
+    def __eq__(self, other):
+        if not isinstance(other, Point):
+            return NotImplemented
+        return self.curve == other.curve and self.x == other.x and self.y == other.y
 
     def __add__(self, other: Point) -> Point:
         """elliptic_curve_addition"""
@@ -61,13 +78,13 @@ class Point:
             )  # pylint: disable=unused-variable
             return x % p
 
-        if self == Point(None, None, None):
+        if self.is_ideal_point():
             return other
-        if other == Point(None, None, None):
+        if other.is_ideal_point():
             return self
         # handle special case of P + (-P) = 0
         if self.x == other.x and self.y != other.y:
-            return Point(None, None, None)
+            return Point.from_ideal_point()
         # compute the "slope"
         if self.x == other.x:  # (self.y = other.y is guaranteed too per above check)
             m = (3 * self.x**2 + self.curve.a) * inv(2 * self.y, self.curve.p)
@@ -81,7 +98,7 @@ class Point:
     def __rmul__(self, k: int) -> Point:
         """Double-and-add algorithm"""
         assert isinstance(k, int) and k >= 0
-        result = Point(None, None, None)
+        result = Point.from_ideal_point()
         append = self
         while k:
             if k & 1:
