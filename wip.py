@@ -1,4 +1,5 @@
-from __future__ import annotations  # PEP 563: Postponed Evaluation of Annotations
+from __future__ import \
+    annotations  # PEP 563: Postponed Evaluation of Annotations
 
 from data_classes import Curve, Generator, Point, PublicKey
 
@@ -38,8 +39,3 @@ print(
 # we are going to use the develop's Bitcoin parallel universe "test net" for this demo, so net='test'
 address = PublicKey.from_point(public_key).address(net="test", compressed=True)
 print(address)
-
-lol_secret_key = 1
-lol_public_key = lol_secret_key * G
-lol_address = PublicKey.from_point(lol_public_key).address(net="test", compressed=True)
-print(lol_address)

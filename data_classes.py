@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from utils import b58encode, is_prime, ripemd160, sha256
 
 
@@ -111,27 +109,23 @@ class Point:
         return self.__rmul__(other)
 
 
-@dataclass
 class Generator:
     """
     A generator over a curve: an initial point and the (pre-computed) order
     """
 
-    G: Point  # a generator point on the curve
-    n: int  # the order of the generating point, so 0*G = n*G = INF
-
-    def is_valid(self) -> bool:
-        """check if the generator point lies on the curve"""
-        return self.G.is_valid()
+    def __init__(self, G: Point, n: int):
+        self.G = G
+        self.n = n
 
 
-@dataclass
 class PrivateKey:
     """
     An private key. Basically an integer.
     """
 
-    secret: int
+    def __init__(self, secret: int):
+        self.secret = secret
 
     def get_public_key(self, generator_point: Point) -> PublicKey:
         """returns the public key point corresponding to the private key"""

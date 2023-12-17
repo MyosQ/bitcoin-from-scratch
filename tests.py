@@ -1,4 +1,3 @@
-# using unittest to test the functions in the file
 import unittest
 
 from data_classes import Curve, Generator, Point, PrivateKey, PublicKey
@@ -31,7 +30,7 @@ class CurveTestCase(unittest.TestCase):
             Curve(p=17, a=-3, b=2)
 
         with self.assertRaisesRegex(AssertionError, "p is not prime"):
-            Curve(p=18, a=1, b=1)
+            Curve(p=17 * 19, a=1, b=1)
 
 
 class PointTestCase(unittest.TestCase):
@@ -46,6 +45,9 @@ class PointTestCase(unittest.TestCase):
         P = Point(curve, x=1, y=2)
         Q = Point(curve, x=3, y=4)
         assert P + Q == Point(curve, x=14, y=2)
+        P = Point(curve, x=1, y=2)
+        Q = Point(curve, x=14, y=15)
+        assert P + Q == Point(curve, x=3, y=13)
 
     def test_addition_same_as_multiplication(self):
         for P in [self.point1, self.point2]:

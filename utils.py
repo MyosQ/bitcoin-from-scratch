@@ -1,3 +1,6 @@
+import random
+
+
 def is_prime(n: int) -> bool:
     """Custom Primality tests"""
     if n <= 3:
@@ -5,8 +8,15 @@ def is_prime(n: int) -> bool:
     if n % 2 == 0 or n % 3 == 0 or n % 5 == 0 or n % 7 == 0:
         return False
 
-    # miller rabin test
-    ...
+    # Fermat's little theorem
+    # pick a random number a < n
+    # if a^(n-1) mod n == 1 then n is probably prime
+    # repeat k times to increase probability of correctness
+    k = 100
+    for _ in range(k):
+        a = random.randint(2, n - 1)
+        if pow(a, n - 1, n) != 1:
+            return False
 
     return True
 
